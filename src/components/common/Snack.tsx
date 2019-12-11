@@ -30,7 +30,7 @@ export default function Snack(props: Props) {
       onClose={() => setOpen(false)}
     >
       <SnackbarContent
-        style={{ background: variant }}
+        style={{ background: variant, color: "white" }}
         message={
           <span className="flex row v-center">
             {variant === "#d32f2f" && <Error className="m-10" />}

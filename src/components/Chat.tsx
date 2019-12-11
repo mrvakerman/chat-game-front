@@ -87,6 +87,9 @@ export default function Chat(props: Props) {
 
   function sendWord(event: any) {
     event.preventDefault();
+    if (!word) {
+      return;
+    }
     stopTimer();
     if (word === "skip" || word === "пропустить") {
       socket.emit("skip-user", { roomName: room.name, userName: user.name });
@@ -102,12 +105,19 @@ export default function Chat(props: Props) {
 
   function sendMessage(event: any) {
     event.preventDefault();
-    let to = message.substring(message.indexOf("#"), message.indexOf(":: "));
+    let to = message.substring(message.indexOf("<"), message.indexOf(">") + 1);
+    let mes = message.replace(to, "").trim();
+    if (!mes) {
+      return;
+    }
     socket.emit("send-message", {
       roomName: room.name,
       from: user.name,
-      to: to.replace("#", ""),
-      message: message.replace(to, "").replace(":: ", "")
+      to: to
+        .replace("<", "")
+        .replace(">", "")
+        .split(","),
+      message: mes
     });
     setMessage("");
   }
@@ -130,6 +140,29 @@ export default function Chat(props: Props) {
   function getUserColors(userName: string) {
     let currentUser = users.find(user => user.name === userName);
     return currentUser ? currentUser.color : {};
+  }
+
+  function addUserToSendingMessage(name: string) {
+    let to = message.substring(message.indexOf("<") + 1, message.indexOf(">"));
+    if (to) {
+      let arrTo = to.split(",");
+      if (arrTo.includes(name)) {
+        arrTo = arrTo.filter(item => item !== name);
+        setMessage(
+          mes =>
+            `${arrTo.length > 0 ? `<${arrTo.join(",")}> ` : ""}${mes.substring(
+              mes.indexOf(">") + 2
+            )}`
+        );
+      } else {
+        arrTo.push(name);
+        setMessage(
+          mes => `<${arrTo.join(",")}> ${mes.substring(mes.indexOf(">") + 2)}`
+        );
+      }
+    } else {
+      setMessage(`<${name}> ${message}`);
+    }
   }
 
   return (
@@ -160,7 +193,7 @@ export default function Chat(props: Props) {
               <Chip
                 label={user.name}
                 style={{ ...user.color, border: "1px solid" }}
-                onClick={() => setMessage(`#${user.name}::  ${message}`)}
+                onClick={() => addUserToSendingMessage(user.name)}
               />
             </Badge>
           </div>
